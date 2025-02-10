@@ -4,6 +4,7 @@ import soundfile as sf
 from .base import TTSEngine, SynthesisResult
 from models.config import VoiceConfig
 from kokoro import KPipeline
+from utils.file_manager import FileManager
 
 
 class KokoroEngine(TTSEngine):
@@ -11,8 +12,10 @@ class KokoroEngine(TTSEngine):
         super().__init__(config)
         self.pipeline = KPipeline(lang_code=config.lang_code)
 
-    def synthesize(self, text: str, output_path: Path) -> SynthesisResult:
-        print(f"Starting synthesis for {len(text)} characters")  # Progress indicator
+    def synthesize(
+        self, text: str, output_path: Path, chunk_index: int = 1
+    ) -> SynthesisResult:
+        print(f"📦 Processing text chunk {chunk_index} ({len(text)} characters)")
         try:
             generator = self.pipeline(
                 text,
@@ -20,12 +23,13 @@ class KokoroEngine(TTSEngine):
                 speed=self.config.speed,
                 split_pattern=r"",
             )
-
             results = []
-            for i, (_, _, audio) in enumerate(generator):
-                print(f"Processing chunk {i+1}")  # Chunk progress
-                filename = output_path.with_name(f"{output_path.stem}_{i}.wav")
-                sf.write(filename, audio, 24000)
+            for segment_number, (_, _, audio) in enumerate(generator, start=1):
+                print(f"   🔊 Audio segment {chunk_index}.{segment_number}")
+                filename = output_path.with_name(
+                    f"{output_path.stem}_s{segment_number:03d}.wav"
+                )
+                FileManager.safe_write_audio(filename, audio)
                 results.append(filename)
 
             return SynthesisResult(

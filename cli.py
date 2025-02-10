@@ -30,6 +30,12 @@ def main():
     parser.add_argument(
         "--workers", type=int, default=4, help="Number of parallel synthesis workers"
     )
+    parser.add_argument(
+        "--voice",
+        type=str,
+        default="am_michael",
+        help="Voice model to use (default: am_michael)",
+    )
 
     args = parser.parse_args()
 
@@ -38,6 +44,7 @@ def main():
         engine=args.engine,
         chunk_size=args.chunk_size,
         max_workers=args.workers,
+        voice_settings=VoiceConfig(voice=args.voice, sample_rate=22050, speaker_id=1),
     )
 
     # Process text
@@ -57,10 +64,15 @@ def main():
 
     # Process chunks in parallel
     with ThreadPoolExecutor(max_workers=config.max_workers) as executor:
-        futures = []
-        for i, chunk in enumerate(chunks):
-            output_path = config.output_dir / f"segment_{i:04d}.wav"
-            futures.append(executor.submit(engine.synthesize, chunk, output_path))
+        futures = [
+            executor.submit(
+                engine.synthesize,
+                chunk,
+                config.output_dir / f"output_chunk_{i+1:04d}.wav",
+                chunk_index=i + 1,
+            )
+            for i, chunk in enumerate(chunks)
+        ]
 
         for future in concurrent.futures.as_completed(futures):
             result = future.result()
