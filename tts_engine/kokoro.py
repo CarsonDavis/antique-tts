@@ -2,7 +2,7 @@
 from pathlib import Path
 import soundfile as sf
 from .base import TTSEngine, SynthesisResult
-from models.config import KokoroConfig
+from tts_engine.config import KokoroConfig
 from kokoro import KPipeline
 from utils.file_manager import FileManager
 from pathlib import Path

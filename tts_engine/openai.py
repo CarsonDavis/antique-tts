@@ -1,5 +1,5 @@
 from .base import TTSEngine, SynthesisResult
-from models.config import OpenAIConfig
+from tts_engine.config import OpenAIConfig
 from pathlib import Path
 from openai import OpenAI
 import time

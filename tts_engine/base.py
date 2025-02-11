@@ -1,7 +1,7 @@
 # tts_engine/base.py
 from pathlib import Path
 from pydantic import BaseModel
-from models.config import TTSEngineConfig
+from tts_engine.config import TTSEngineConfig
 
 
 class SynthesisResult(BaseModel):

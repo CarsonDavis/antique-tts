@@ -4,10 +4,9 @@ import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from models.config import TTSConfig, TTSEngineConfig
-from tts_engine.kokoro import KokoroEngine
-from tts_engine.openai import OpenAIEngine
-from processors.chunker import TextChunker
+from tts_engine.config import TTSConfig, TTSEngineConfig
+from tts_engine import OpenAIEngine, KokoroEngine
+from utils.chunker import TextChunker
 from utils.file_manager import FileManager
 
 
