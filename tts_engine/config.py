@@ -21,6 +21,7 @@ class TTSEngineConfig(BaseConfig):
     """Base configuration for all TTS engines"""
 
     engine_name: str = Field(..., frozen=True)
+    cost_per_char: float = Field(default=0.0, description="Cost per character in USD")
 
 
 class KokoroConfig(TTSEngineConfig):
@@ -28,6 +29,7 @@ class KokoroConfig(TTSEngineConfig):
     lang_code: str = Field(default="a", description="Language code for synthesis")
     speed: float = Field(default=1.0, description="Speech speed multiplier")
     voice: str = Field(default="am_michael", description="Voice model to use")
+    cost_per_char: float = Field(default=0.0, description="Cost per character in USD")
 
 
 class OpenAIConfig(TTSEngineConfig):
@@ -35,7 +37,9 @@ class OpenAIConfig(TTSEngineConfig):
     model: str = Field(default="tts-1-hd", description="OpenAI TTS model to use")
     voice: str = Field(default="alloy", description="Voice to use for synthesis")
     response_format: str = Field(default="wav", description="Audio format for output")
-    # api_key: str = Field(description="OpenAI API key")
+    cost_per_char: float = Field(
+        default=0.000015, description="Cost per character in USD"
+    )
 
 
 class TTSConfig(BaseConfig):

@@ -25,3 +25,10 @@ class TextChunker:
             chunks.append(current_chunk.strip())
 
         return chunks
+
+
+def calculate_total_characters(text: str, chunk_size: int) -> int:
+    """Calculate total characters to be processed"""
+    chunker = TextChunker(chunk_size)
+    chunks = chunker.process(text)
+    return sum(len(chunk) for chunk in chunks)

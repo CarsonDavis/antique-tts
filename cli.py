@@ -6,8 +6,13 @@ from pathlib import Path
 
 from tts_engine.config import TTSConfig, TTSEngineConfig
 from tts_engine import OpenAIEngine, KokoroEngine
-from utils.chunker import TextChunker
-from utils.file_manager import FileManager
+from utils import (
+    TextChunker,
+    FileManager,
+    get_user_confirmation,
+    calculate_cost,
+    calculate_total_characters,
+)
 
 
 # Map engine types to their engine classes
@@ -80,14 +85,26 @@ def main():
     # Create config using factory method
     config = TTSConfig.create(args.engine, cli_args)
 
+    # Read input text and calculate total characters
+    with open(args.input_file) as f:
+        input_text = f.read()
+
+    total_chars = calculate_total_characters(input_text, config.chunk_size)
+
+    # Calculate and confirm costs if necessary
+    total_cost = calculate_cost(total_chars, config.engine_config.cost_per_char)
+
+    if not get_user_confirmation(total_cost):
+        print("Operation cancelled by user.")
+        return
+
     # Create appropriate engine instance
     engine_class = ENGINE_CLASSES[config.engine_config.engine_name]
     engine = engine_class(config.engine_config)
 
     # Process text
     chunker = TextChunker(config.chunk_size)
-    with open(args.input_file) as f:
-        chunks = chunker.process(f.read())
+    chunks = chunker.process(input_text)
 
     # Create output directory
     FileManager.create_output_dir(config.output_dir)
