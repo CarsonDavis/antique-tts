@@ -3,61 +3,92 @@ import argparse
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from models.config import TTSConfig, VoiceConfig
+
+from models.config import TTSConfig, TTSEngineConfig
 from tts_engine.kokoro import KokoroEngine
+from tts_engine.openai import OpenAIEngine
 from processors.chunker import TextChunker
 from utils.file_manager import FileManager
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Antique TTS Batch Processor")
+# Map engine types to their engine classes
+ENGINE_CLASSES = {
+    "kokoro": KokoroEngine,
+    "openai": OpenAIEngine,
+}
+
+
+def create_arg_parser():
+    parser = argparse.ArgumentParser(description="TTS Cli")
+
+    # Add required input file argument
     parser.add_argument("input_file", type=Path, help="Input text file path")
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=Path("output"),
-        help="Output directory for audio files",
-    )
+
+    # Add engine selection argument
     parser.add_argument(
         "--engine",
-        choices=["kokoro", "openai"],
+        choices=list(TTSConfig.ENGINE_CONFIGS.keys()),
         default="kokoro",
         help="TTS engine to use",
     )
-    parser.add_argument(
-        "--chunk-size", type=int, default=4000, help="Maximum characters per chunk"
-    )
-    parser.add_argument(
-        "--workers", type=int, default=4, help="Number of parallel synthesis workers"
-    )
-    parser.add_argument(
-        "--voice",
-        type=str,
-        default="am_michael",
-        help="Voice model to use (default: am_michael)",
-    )
 
+    # Add base TTSConfig arguments
+    for field_name, field in TTSConfig.model_fields.items():
+        if field_name != "engine_config":  # Skip the engine config field
+            parser.add_argument(
+                f"--{field_name.replace('_', '-')}",
+                type=field.annotation,
+                default=None,
+                help=field.description,
+            )
+
+    # Create a dict of all unique engine-specific arguments
+    engine_args = {}
+    for engine_name, config_class in TTSConfig.ENGINE_CONFIGS.items():
+        for field_name, field in config_class.model_fields.items():
+            # Skip frozen fields and parent class fields
+            if not field.frozen and field_name not in TTSEngineConfig.model_fields:
+                if field_name not in engine_args:
+                    engine_args[field_name] = {
+                        "type": field.annotation,
+                        "description": field.description,
+                        "engines": [engine_name],
+                    }
+                else:
+                    engine_args[field_name]["engines"].append(engine_name)
+
+    # Add engine-specific arguments
+    engine_group = parser.add_argument_group("Engine-specific options")
+    for field_name, info in engine_args.items():
+        engines_str = ", ".join(info["engines"])
+        engine_group.add_argument(
+            f"--{field_name.replace('_', '-')}",
+            type=info["type"],
+            default=None,
+            help=f"({engines_str}) {info['description']}",
+        )
+
+    return parser
+
+
+def main():
+    parser = create_arg_parser()
     args = parser.parse_args()
 
-    config = TTSConfig(
-        output_dir=args.output_dir,
-        engine=args.engine,
-        chunk_size=args.chunk_size,
-        max_workers=args.workers,
-        voice_settings=VoiceConfig(voice=args.voice, sample_rate=22050, speaker_id=1),
-    )
+    # Convert args to dict, only including non-None values
+    cli_args = {k: v for k, v in vars(args).items() if v is not None}
+
+    # Create config using factory method
+    config = TTSConfig.create(args.engine, cli_args)
+
+    # Create appropriate engine instance
+    engine_class = ENGINE_CLASSES[config.engine_config.engine_type]
+    engine = engine_class(config.engine_config)
 
     # Process text
     chunker = TextChunker(config.chunk_size)
     with open(args.input_file) as f:
         chunks = chunker.process(f.read())
-
-    # Initialize engine
-    engine = (
-        KokoroEngine(config.voice_settings)
-        if config.engine == "kokoro"
-        else OpenaiEngine(config)
-    )
 
     # Create output directory
     FileManager.create_output_dir(config.output_dir)

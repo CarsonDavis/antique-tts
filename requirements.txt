@@ -1,3 +1,4 @@
 kokoro==0.7.12
 pydantic==2.10.6
 soundfile==0.13.1
+openai==1.61.1

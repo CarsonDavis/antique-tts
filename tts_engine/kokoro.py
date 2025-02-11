@@ -2,14 +2,17 @@
 from pathlib import Path
 import soundfile as sf
 from .base import TTSEngine, SynthesisResult
-from models.config import VoiceConfig
+from models.config import KokoroConfig
 from kokoro import KPipeline
 from utils.file_manager import FileManager
+from pathlib import Path
+from kokoro import KPipeline
 
 
 class KokoroEngine(TTSEngine):
-    def __init__(self, config: VoiceConfig):
+    def __init__(self, config: KokoroConfig):
         super().__init__(config)
+
         self.pipeline = KPipeline(lang_code=config.lang_code)
 
     def synthesize(
