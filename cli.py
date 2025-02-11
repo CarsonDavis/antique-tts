@@ -4,8 +4,8 @@ import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from tts_engine.config import TTSConfig, TTSEngineConfig
-from tts_engine import OpenAIEngine, KokoroEngine
+from tts_engine.config import TTSConfig
+from tts_engine.registry import TTS_REGISTRY
 from utils import (
     TextChunker,
     FileManager,
@@ -15,15 +15,8 @@ from utils import (
 )
 
 
-# Map engine types to their engine classes
-ENGINE_CLASSES = {
-    "kokoro": KokoroEngine,
-    "openai": OpenAIEngine,
-}
-
-
 def create_arg_parser():
-    parser = argparse.ArgumentParser(description="TTS Cli")
+    parser = argparse.ArgumentParser(description="TTS CLI")
 
     # Add required input file argument
     parser.add_argument("input_file", type=Path, help="Input text file path")
@@ -31,7 +24,7 @@ def create_arg_parser():
     # Add engine selection argument
     parser.add_argument(
         "--engine",
-        choices=list(TTSConfig.ENGINE_CONFIGS.keys()),
+        choices=list(TTS_REGISTRY.keys()),
         default="kokoro",
         help="TTS engine to use",
     )
@@ -48,10 +41,11 @@ def create_arg_parser():
 
     # Create a dict of all unique engine-specific arguments
     engine_args = {}
-    for engine_name, config_class in TTSConfig.ENGINE_CONFIGS.items():
+    for engine_name, engine_info in TTS_REGISTRY.items():
+        config_class = engine_info["config"]
         for field_name, field in config_class.model_fields.items():
             # Skip frozen fields and parent class fields
-            if not field.frozen and field_name not in TTSEngineConfig.model_fields:
+            if not field.frozen and field_name not in TTSConfig.model_fields:
                 if field_name not in engine_args:
                     engine_args[field_name] = {
                         "type": field.annotation,
@@ -98,9 +92,8 @@ def main():
         print("Operation cancelled by user.")
         return
 
-    # Create appropriate engine instance
-    engine_class = ENGINE_CLASSES[config.engine_config.engine_name]
-    engine = engine_class(config.engine_config)
+    # Create engine instance from registry
+    engine = TTS_REGISTRY[args.engine]["engine"](config.engine_config)
 
     # Process text
     chunker = TextChunker(config.chunk_size)

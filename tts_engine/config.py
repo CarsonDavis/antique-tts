@@ -1,6 +1,6 @@
 # tts_engine/config.py
 from pydantic import BaseModel, Field
-from typing import Literal, ClassVar, Dict, Type
+from typing import Literal
 from pathlib import Path
 
 
@@ -10,7 +10,6 @@ class BaseConfig(BaseModel):
     @classmethod
     def from_cli_args(cls, args: dict):
         """Create config from CLI arguments"""
-        # Only include args that were explicitly set and match our fields
         config_values = {
             k: v for k, v in args.items() if k in cls.model_fields and v is not None
         }
@@ -52,20 +51,16 @@ class TTSConfig(BaseConfig):
     chunk_size: int = Field(default=4000, description="Maximum characters per chunk")
     max_workers: int = Field(default=4, description="Number of parallel workers")
 
-    # Map engine types to their config classes
-    ENGINE_CONFIGS: ClassVar[Dict[str, Type[TTSEngineConfig]]] = {
-        "kokoro": KokoroConfig,
-        "openai": OpenAIConfig,
-    }
-
     @classmethod
     def create(cls, engine_name: str, cli_args: dict):
         """Factory method to create appropriate config"""
-        if engine_name not in cls.ENGINE_CONFIGS:
+        from .registry import TTS_REGISTRY
+
+        if engine_name not in TTS_REGISTRY:
             raise ValueError(f"Unsupported engine: {engine_name}")
 
         # Create engine config from CLI args
-        engine_config = cls.ENGINE_CONFIGS[engine_name].from_cli_args(cli_args)
+        engine_config = TTS_REGISTRY[engine_name]["config"].from_cli_args(cli_args)
 
         # Use the same pattern for the main config
         return cls.from_cli_args(cli_args | {"engine_config": engine_config})
