@@ -22,6 +22,23 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### Environment Setup
+
+For OpenAI TTS, you'll need to set your API key:
+
+```bash
+# Linux/MacOS
+export OPENAI_API_KEY='your-api-key-here'
+
+# Windows (PowerShell)
+$env:OPENAI_API_KEY='your-api-key-here'
+
+# Windows (Command Prompt)
+set OPENAI_API_KEY=your-api-key-here
+```
+
+Get your API key from: https://platform.openai.com/account/api-keys
+
 ### Basic Usage
 
 Convert text to speech using default settings (Kokoro engine):
