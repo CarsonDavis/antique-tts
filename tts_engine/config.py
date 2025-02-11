@@ -20,18 +20,18 @@ class BaseConfig(BaseModel):
 class TTSEngineConfig(BaseConfig):
     """Base configuration for all TTS engines"""
 
-    engine_type: str = Field(..., frozen=True)
+    engine_name: str = Field(..., frozen=True)
 
 
 class KokoroConfig(TTSEngineConfig):
-    engine_type: Literal["kokoro"] = "kokoro"
+    engine_name: Literal["kokoro"] = "kokoro"
     lang_code: str = Field(default="a", description="Language code for synthesis")
     speed: float = Field(default=1.0, description="Speech speed multiplier")
     voice: str = Field(default="am_michael", description="Voice model to use")
 
 
 class OpenAIConfig(TTSEngineConfig):
-    engine_type: Literal["openai"] = "openai"
+    engine_name: Literal["openai"] = "openai"
     model: str = Field(default="tts-1-hd", description="OpenAI TTS model to use")
     voice: str = Field(default="alloy", description="Voice to use for synthesis")
     response_format: str = Field(default="wav", description="Audio format for output")
@@ -55,13 +55,13 @@ class TTSConfig(BaseConfig):
     }
 
     @classmethod
-    def create(cls, engine_type: str, cli_args: dict):
+    def create(cls, engine_name: str, cli_args: dict):
         """Factory method to create appropriate config"""
-        if engine_type not in cls.ENGINE_CONFIGS:
-            raise ValueError(f"Unsupported engine type: {engine_type}")
+        if engine_name not in cls.ENGINE_CONFIGS:
+            raise ValueError(f"Unsupported engine: {engine_name}")
 
         # Create engine config from CLI args
-        engine_config = cls.ENGINE_CONFIGS[engine_type].from_cli_args(cli_args)
+        engine_config = cls.ENGINE_CONFIGS[engine_name].from_cli_args(cli_args)
 
         # Use the same pattern for the main config
         return cls.from_cli_args(cli_args | {"engine_config": engine_config})

@@ -81,7 +81,7 @@ def main():
     config = TTSConfig.create(args.engine, cli_args)
 
     # Create appropriate engine instance
-    engine_class = ENGINE_CLASSES[config.engine_config.engine_type]
+    engine_class = ENGINE_CLASSES[config.engine_config.engine_name]
     engine = engine_class(config.engine_config)
 
     # Process text
