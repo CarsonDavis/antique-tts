@@ -41,6 +41,12 @@ class OpenAIConfig(TTSEngineConfig):
     )
 
 
+class EdgeTTSConfig(TTSEngineConfig):
+    engine_name: Literal["edge-tts"] = "edge-tts"
+    voice: str = Field(default="en-US-ChristopherNeural", description="Voice to use for synthesis")
+    cost_per_char: float = Field(default=0.0, description="Cost per character in USD")
+
+
 class TTSConfig(BaseConfig):
     """Main configuration supporting multiple engines"""
 

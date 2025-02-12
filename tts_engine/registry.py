@@ -1,7 +1,8 @@
 # tts_engine/registry.py
 from .kokoro import KokoroEngine
 from .openai import OpenAIEngine
-from .config import KokoroConfig, OpenAIConfig
+from .edgetts import EdgeTTSEngine
+from .config import KokoroConfig, OpenAIConfig, EdgeTTSConfig
 
 TTS_REGISTRY = {
     "kokoro": {
@@ -11,5 +12,9 @@ TTS_REGISTRY = {
     "openai": {
         "engine": OpenAIEngine,
         "config": OpenAIConfig,
+    },
+    "edge-tts": {
+        "engine": EdgeTTSEngine,
+        "config": EdgeTTSConfig,
     },
 }
